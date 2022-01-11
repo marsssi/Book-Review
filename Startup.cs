@@ -1,7 +1,10 @@
+using Book_Review.Data;
+using Book_Review.Data.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,18 +19,31 @@ namespace Book_Review
 {
     public class Startup
     {
+        public string ConnectionString  { get; set; }
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            ConnectionString = Configuration.GetConnectionString("DefaultConnectionString");
         }
 
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+       
+       public void ConfigureServices(IServiceCollection services)
         {
 
             services.AddControllers();
+
+            //Configure DBContext with SQLServer
+            services.AddDbContext<AppDbContext>(options => options.UseSqlServer(ConnectionString));
+
+
+            //Configure Services
+            services.AddTransient<BooksService>();
+
+
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Book_Review", Version = "v1" });
@@ -41,7 +57,7 @@ namespace Book_Review
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Book_Review v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Book_Review_ui_updated v1"));
             }
 
             app.UseHttpsRedirection();
@@ -54,6 +70,8 @@ namespace Book_Review
             {
                 endpoints.MapControllers();
             });
+
+            AppDbInitializer.Seed(app);
         }
     }
 }
